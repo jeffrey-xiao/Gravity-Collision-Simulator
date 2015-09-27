@@ -2,11 +2,12 @@ import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
+
 import javax.swing.JPanel;
 
 
 public class Field extends JPanel implements MouseListener {
-	
+
 	/**
 	 * 
 	 */
@@ -14,12 +15,12 @@ public class Field extends JPanel implements MouseListener {
 
 	// ArrayList holding the active circles in the window
 	private ArrayList<Circle> active = new ArrayList<Circle>();
-	
+
 	// some containers
 	private double prevX;
 	private double prevY;
 	private long prevTime;
-	
+
 	Field () {
 		addMouseListener(this);
 	}
@@ -55,16 +56,17 @@ public class Field extends JPanel implements MouseListener {
 			for (int j = i + 1; j < active.size(); j++) {
 				Circle c1 = active.get(i);
 				Circle c2 = active.get(j);
-				if (c1.isCollide(c2)) {
+				if (c1 != null && c2 != null && c1.isCollide(c2)) {
 					handleCollision(c1, c2);
 				} else {
 				}
-				
+
 			}
 		}
 	}
 	// handling the collisions and updating the velocity (x and y components)
 	private void handleCollision (Circle c1, Circle c2) {
+		translate(c1, c2);
 		double nxs = c2.x - c1.x;
 		double nys = c2.y - c1.y;
 		double unxs = nxs / Math.sqrt((nxs*nxs + nys*nys));
@@ -75,21 +77,56 @@ public class Field extends JPanel implements MouseListener {
 		double nt1 = utxs * c1.xs + utys * c1.ys;
 		double n2 = unxs * c2.xs + unys * c2.ys;
 		double nt2 = utxs * c2.xs + utys * c2.ys;
-		
-//		double nn1 = ((Window.RESISTITION+1)*c2.area*n2 + n1*(c1.area - Window.RESISTITION*c2.area))/(c1.area + c2.area);
-//		double nn2 = ((Window.RESISTITION+1)*c1.area*n1 - n2*(c1.area - Window.RESISTITION*c2.area))/(c1.area + c2.area);
+
+		// double nn1 = ((Window.RESISTITION+1)*c2.area*n2 + n1*(c1.area - Window.RESISTITION*c2.area))/(c1.area + c2.area);
+		// double nn2 = ((Window.RESISTITION+1)*c1.area*n1 - n2*(c1.area - Window.RESISTITION*c2.area))/(c1.area + c2.area);
 		double nn1 = (c2.area*(n2 - n1)*Window.RESISTITION + c2.area * n2 + c1.area * n1)/(c1.area + c2.area);
 		double nn2 = (c1.area*(n1 - n2)*Window.RESISTITION + c2.area * n2 + c1.area * n1)/(c1.area + c2.area);
 		c1.xs = nn1 * unxs + nt1 * utxs;
 		c1.ys = nn1 * unys + nt1 * utys;
-		
+
 		c2.xs = nn2 * unxs + nt2 * utxs;
 		c2.ys = nn2 * unys + nt2 * utys;
-		
+
+	}
+	private void translate (Circle c1, Circle c2) {
+		double dx = (c1.x - c2.x);
+		double dy = (c1.y - c2.y);
+		double d = Math.sqrt(dx*dx + dy*dy);
+		dx *= (c1.radius + c2.radius - d)/d;
+		dy *= (c1.radius + c2.radius - d)/d;
+		double im1 = 1 / c1.area;
+		double im2 = 1 / c2.area;
+		c1.x += dx * im1 /(im1 + im2);
+		c1.y += dy * im1 /(im1 + im2);
+		c2.x -= dx * im2 /(im1 + im2);
+		c2.y -= dy * im2 /(im1 + im2);
+		repaint();
+	}
+	@SuppressWarnings ("unused")
+	private void wallAdjust (Circle c1, Circle c2) {
+		if (c1.x < c1.radius) {
+			c2.x += c1.radius - c1.x;
+			c1.x = c1.radius;
+			c1.xs *= -Window.RESISTITION;
+		} else if (c1.x > this.getWidth() - c1.radius) {
+			c2.x -= (c1.x - (this.getWidth() - c1.radius));
+			c1.x = this.getWidth() - c2.radius;
+			c1.xs *= -Window.RESISTITION;
+		}
+		if (c1.y < c1.radius) {
+			c2.y += c1.radius - c1.y;
+			c1.y = c1.radius;
+			c1.ys *= -Window.RESISTITION;
+		} else if (c1.y > this.getHeight() - c1.radius) {
+			c2.y -= (c1.y - (this.getHeight() - c1.radius));
+			c1.y = this.getHeight() - c2.radius;
+			c1.ys *= -Window.RESISTITION;
+		}
 	}
 	@Override
 	public void mouseClicked (MouseEvent e) {
-		
+
 	}
 	// get the location of the new circle
 	@Override
@@ -118,12 +155,13 @@ public class Field extends JPanel implements MouseListener {
 	public void mouseExited (MouseEvent e) {
 	}
 	static class Circle {
-		// coordinate representing the center of the circle
-		double x, y;
 
-		double radius;
-		double xs, ys;
-		double area;
+		// coordinate representing the center of the circle
+		private double x, y;
+
+		private double radius;
+		private double xs, ys;
+		private double area;
 		Circle (double x, double y, double radius) {
 			this(x, y, radius, 0, 0);
 		}
@@ -137,7 +175,7 @@ public class Field extends JPanel implements MouseListener {
 		}
 		// check if two circles are colliding
 		public boolean isCollide (Circle c) {
-			return distCircle(c) <= 0;
+			return distCircle(c) < -0.1;
 		}
 		// distance between two circles
 		public double distCircle (Circle c) {

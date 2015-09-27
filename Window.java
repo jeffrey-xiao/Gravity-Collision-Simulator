@@ -40,10 +40,10 @@ public class Window extends JFrame {
 			}
 		});
 		
-		JSlider gravity = new JSlider(JSlider.HORIZONTAL, 0, 500, 100);
+		JSlider gravity = new JSlider(JSlider.HORIZONTAL, 0, 250, 100);
 		gravity.setMajorTickSpacing(50);
 		gravity.setPaintTicks(true);
-		gravity.setLabelTable(createLabels(0, 500, 0.00, 50.0, 4));
+		gravity.setLabelTable(createLabels(0, 250, 0.00, 25.0, 4));
 		gravity.setPaintLabels(true);
 		gravity.addChangeListener(new ChangeListener() {
 			@Override
